@@ -1,7 +1,7 @@
 {
   "name": "@sgnl-actions/sailpoint-identity-now-disable-account",
   "version": "1.0.0",
-  "description": "SailPoint IdentityNow disable account action for SGNL Job Service",
+  "description": "SailPoint IdentityNow disable account action for SGNL CAEP Hub",
   "type": "module",
   "main": "dist/index.js",
   "scripts": {
