@@ -19,7 +19,7 @@ The action calls the SailPoint IdentityNow `/v3/accounts/{id}/disable` API endpo
 
 | Name | Description | Required |
 |------|-------------|----------|
-| `SAILPOINT_API_TOKEN` | SailPoint IdentityNow API token (Bearer token or OAuth2 access token) | Yes |
+| `BEARER_AUTH_TOKEN` | Bearer token for SailPoint IdentityNow API authentication | Yes |
 
 ### Environment Variables
 
