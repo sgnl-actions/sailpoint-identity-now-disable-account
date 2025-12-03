@@ -89,8 +89,7 @@ This action supports four authentication methods. Configure one of the following
     "forceProvisioning": true
   },
   "environment": {
-    "ADDRESS": "https://example.api.identitynow.com",
-    "LOG_LEVEL": "info"
+    "ADDRESS": "https://example.api.identitynow.com"
   }
 }
 ```
