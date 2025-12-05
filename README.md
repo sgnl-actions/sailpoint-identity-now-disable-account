@@ -1,150 +1,249 @@
 # SailPoint IdentityNow Disable Account Action
 
-This SGNL action disables an account in SailPoint IdentityNow. It's commonly used to temporarily revoke access for users who should not have access to systems.
+Disable an account in SailPoint IdentityNow, temporarily revoking access for users. This action creates an asynchronous provisioning task to disable the specified account.
 
 ## Overview
 
-The action calls the SailPoint IdentityNow `/v3/accounts/{id}/disable` API endpoint to initiate an account disable operation. This creates a provisioning task that processes asynchronously in SailPoint.
+This SGNL action integrates with SailPoint IdentityNow to disable user accounts. When executed, it calls the `/v3/accounts/{id}/disable` API endpoint to initiate an account disable operation that processes asynchronously in SailPoint.
 
 ## Prerequisites
 
-- SailPoint IdentityNow tenant with API access disabled
-- Valid API credentials (Personal Access Token or OAuth2)
+- SailPoint IdentityNow tenant with API access enabled
+- API authentication credentials (supports 4 auth methods - see Configuration below)
 - Account ID of the account to disable
-- Appropriate permissions to disable accounts
+- Appropriate permissions to manage account lifecycle
 
 ## Configuration
 
-### Secrets
+### Authentication
 
-| Name | Description | Required |
-|------|-------------|----------|
-| `SAILPOINT_API_TOKEN` | SailPoint IdentityNow API token (Bearer token or OAuth2 access token) | Yes |
+This action supports four authentication methods. Configure one of the following:
 
-### Environment Variables
+#### Option 1: Bearer Token (SailPoint API Token)
+| Secret | Description |
+|--------|-------------|
+| `BEARER_AUTH_TOKEN` | Bearer token for SailPoint IdentityNow API authentication |
 
-| Name | Description | Default |
-|------|-------------|---------|
-| `RATE_LIMIT_BACKOFF_MS` | Milliseconds to wait when rate limited | 30000 |
-| `SERVICE_ERROR_BACKOFF_MS` | Milliseconds to wait on service errors | 10000 |
+#### Option 2: Basic Authentication
+| Secret | Description |
+|--------|-------------|
+| `BASIC_USERNAME` | Username for SailPoint IdentityNow authentication |
+| `BASIC_PASSWORD` | Password for SailPoint IdentityNow authentication |
+
+#### Option 3: OAuth2 Client Credentials
+| Secret/Environment | Description |
+|-------------------|-------------|
+| `OAUTH2_CLIENT_CREDENTIALS_CLIENT_SECRET` | OAuth2 client secret |
+| `OAUTH2_CLIENT_CREDENTIALS_CLIENT_ID` | OAuth2 client ID |
+| `OAUTH2_CLIENT_CREDENTIALS_TOKEN_URL` | OAuth2 token endpoint URL |
+| `OAUTH2_CLIENT_CREDENTIALS_SCOPE` | OAuth2 scope (optional) |
+| `OAUTH2_CLIENT_CREDENTIALS_AUDIENCE` | OAuth2 audience (optional) |
+| `OAUTH2_CLIENT_CREDENTIALS_AUTH_STYLE` | OAuth2 auth style (optional) |
+
+#### Option 4: OAuth2 Authorization Code
+| Secret | Description |
+|--------|-------------|
+| `OAUTH2_AUTHORIZATION_CODE_ACCESS_TOKEN` | OAuth2 access token |
+
+### Required Environment Variables
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `ADDRESS` | SailPoint IdentityNow API base URL | `https://example.api.identitynow.com` |
 
 ### Input Parameters
 
-| Name | Type | Description | Required |
-|------|------|-------------|----------|
-| `accountId` | string | The ID of the account to disable | Yes |
-| `sailpointDomain` | string | SailPoint IdentityNow tenant domain (e.g., `example.api.identitynow.com`) | Yes |
-| `externalVerificationId` | string | External verification ID for the disable operation | No |
-| `forceProvisioning` | boolean | Force provisioning of the account disable operation | No |
+| Parameter | Type | Required | Description | Example |
+|-----------|------|----------|-------------|---------|
+| `accountId` | string | Yes | The ID of the account to disable | `2c91808570bbdc7f0170c02c3a6301f5` |
+| `address` | string | No | Override API base URL | `https://custom.api.identitynow.com` |
+| `externalVerificationId` | string | No | External verification ID for the disable operation | `ticket-12345` |
+| `forceProvisioning` | boolean | No | Force provisioning of the account disable operation | `true` |
 
-### Output Parameters
+### Output Structure
 
-| Name | Type | Description |
-|------|------|-------------|
+| Field | Type | Description |
+|-------|------|-------------|
 | `accountId` | string | The ID of the account that was disabled |
 | `disabled` | boolean | Whether the account was successfully disabled |
 | `taskId` | string | The ID of the provisioning task created |
 | `message` | string | Additional information about the operation |
-| `disabledAt` | datetime | When the account was disabled (ISO 8601) |
+| `disabledAt` | datetime | When the operation was initiated (ISO 8601) |
 
-## Usage Examples
+## Usage Example
 
-### Basic Disable
+### Job Request
+
 ```json
 {
-  "accountId": "2c91808570bbdc7f0170c02c3a6301f5",
-  "sailpointDomain": "example.api.identitynow.com"
+  "id": "disable-account-001",
+  "type": "nodejs-22",
+  "script": {
+    "repository": "github.com/sgnl-actions/sailpoint-identity-now-disable-account",
+    "version": "v1.0.0",
+    "type": "nodejs"
+  },
+  "script_inputs": {
+    "accountId": "2c91808570bbdc7f0170c02c3a6301f5",
+    "externalVerificationId": "ticket-12345",
+    "forceProvisioning": true
+  },
+  "environment": {
+    "ADDRESS": "https://example.api.identitynow.com"
+  }
 }
 ```
 
-### Disable with Verification
+### Successful Response
+
 ```json
 {
   "accountId": "2c91808570bbdc7f0170c02c3a6301f5",
-  "sailpointDomain": "example.api.identitynow.com",
-  "externalVerificationId": "ticket-12345",
-  "forceProvisioning": true
+  "disabled": true,
+  "taskId": "2c91808770c3ee34017a6302ec9b03ac",
+  "message": "Account disable operation initiated",
+  "disabledAt": "2024-01-15T10:30:00Z"
 }
 ```
+
+## How It Works
+
+The action performs a POST request to the SailPoint IdentityNow API to disable the account:
+
+1. **Validate Input**: Ensures accountId parameter is provided
+2. **Authenticate**: Uses configured authentication method to get authorization
+3. **Build Request**: Constructs the request with optional parameters
+4. **Disable Account**: Makes POST request to `/v3/accounts/{accountId}/disable`
+5. **Return Task**: Returns the provisioning task ID for tracking
+
+**Note**: Account disable operations in SailPoint are asynchronous. The API returns immediately with a task ID, and the actual disable operation processes in the background.
 
 ## Error Handling
 
-The action includes automatic retry logic for common transient errors:
+The action includes error handling with automatic retry logic managed by the framework:
 
-### Retryable Errors
-- **429 Rate Limit**: Waits 30 seconds (configurable) before retrying
-- **502 Bad Gateway**: Waits 10 seconds before retrying  
-- **503 Service Unavailable**: Waits 10 seconds before retrying
-- **504 Gateway Timeout**: Waits 10 seconds before retrying
-
-### Fatal Errors
-- **400 Bad Request**: Invalid parameters or account state
-- **401 Unauthorized**: Invalid or expired credentials
+### HTTP Status Codes
+- **202 Accepted**: Successful disable request (expected response)
+- **400 Bad Request**: Invalid account ID or account state
+- **401 Unauthorized**: Invalid authentication credentials
 - **403 Forbidden**: Insufficient permissions
-- **404 Not Found**: Account ID does not exist
+- **404 Not Found**: Account not found
+- **429 Rate Limit**: Too many requests
+- **502/503/504 Service Errors**: Temporary service issues
+
+### Automatic Retry Logic
+
+The framework automatically handles retry logic for transient errors. The error handler simply re-throws errors, allowing the framework to determine retry behavior based on the error type and status code.
+
+## Development
+
+### Local Testing
+
+```bash
+# Install dependencies
+npm install
+
+# Run tests
+npm test
+
+# Test locally with mock data
+npm run dev
+
+# Build for production
+npm run build
+```
+
+### Running Tests
+
+The action includes comprehensive unit tests covering:
+- Input validation (accountId parameter)
+- Authentication handling (all 4 auth methods)
+- Success scenarios with optional parameters
+- Error handling (API errors, missing credentials)
+- Error handler behavior (re-throwing errors)
+- Account ID URL encoding
+
+```bash
+# Run all tests
+npm test
+
+# Run tests in watch mode
+npm run test:watch
+
+# Check test coverage
+npm run test:coverage
+```
 
 ## Security Considerations
 
-- **API Token Security**: Store API tokens securely in the secrets manager, never in code
+- **Credential Protection**: Never log or expose authentication credentials
+- **User Impact**: Disabling accounts immediately revokes access
+- **Audit Logging**: All operations are logged in SailPoint's audit system with tracking IDs
 - **Input Validation**: Account IDs are URL-encoded to prevent injection attacks
-- **Audit Trail**: All disable operations are logged in SailPoint's audit system
-- **Permissions**: Ensure the API token has only the necessary permissions
+- **Permissions**: Ensure API credentials have only necessary permissions
+- **Token Security**: Store API tokens securely, use short-lived tokens when possible
+
+## SailPoint API Reference
+
+This action uses the following SailPoint IdentityNow API endpoint:
+- [Disable Account](https://developer.sailpoint.com/docs/api/v3/disable-account/) - POST `/v3/accounts/{id}/disable`
+- [Authentication](https://developer.sailpoint.com/docs/api/authentication/)
 
 ## Troubleshooting
 
 ### Common Issues
 
-1. **Account Not Found**
+1. **"Invalid or missing accountId parameter"**
+   - Ensure the `accountId` parameter is provided and is a non-empty string
+   - Verify the account ID exists in your SailPoint tenant
+
+2. **"No URL specified. Provide address parameter or ADDRESS environment variable"**
+   - Set the ADDRESS environment variable or provide address parameter
+   - Example: `https://example.api.identitynow.com`
+
+3. **"No authentication configured"**
+   - Ensure you have configured one of the four supported authentication methods
+   - Check that the required secrets/environment variables are set
+
+4. **"Failed to disable account: HTTP 404"**
    - Verify the account ID is correct
-   - Check that the account exists in the specified tenant
+   - Check that the account exists in SailPoint IdentityNow
+   - Ensure you're using the correct tenant URL
 
-2. **Permission Denied**
-   - Verify API token has permission to disable accounts
-   - Check source system permissions
+5. **"Failed to disable account: HTTP 403"**
+   - Ensure your API credentials have permission to disable accounts
+   - Check SailPoint admin console for required permissions
+   - Verify source system permissions
 
-3. **Already Disabled**
-   - The account may already be in a disabled state
-   - Check account status before attempting disable
+6. **"Failed to disable account: HTTP 400"**
+   - Account may already be disabled
+   - Check account status in SailPoint UI
+   - Verify the account state allows disable operation
 
-4. **Provisioning Delays**
+7. **Account not actually disabled after success response**
    - Disable operations are asynchronous
-   - Check the returned task ID for status
-   - Monitor SailPoint provisioning queue
+   - Check the provisioning task status using the returned task ID
+   - Monitor SailPoint provisioning queue in the UI
+   - Verify source system connectivity
 
 ### Debug Information
 
-Disable debug logging by checking:
-- SailPoint API response details in logs
-- Task ID for tracking in SailPoint UI
-- Tracking ID for support cases
+When troubleshooting issues:
+- Check the returned `taskId` in SailPoint UI for provisioning status
+- Review the `trackingId` from error messages for support cases
+- Monitor SailPoint logs for detailed error information
+- Verify source system is reachable and responding
+- Check source system-specific disable requirements
 
-## Development
 
-### Running Tests
-```bash
-npm test
-npm run test:coverage
-```
+## License
 
-### Building
-```bash
-npm run build
-```
-
-### Linting
-```bash
-npm run lint
-npm run lint:fix
-```
-
-## API Reference
-
-- [SailPoint IdentityNow API - Disable Account](https://developer.sailpoint.com/docs/api/v3/disable-account/)
-- [Authentication](https://developer.sailpoint.com/docs/api/authentication/)
+MIT
 
 ## Support
 
 For issues or questions:
-- Check SailPoint IdentityNow documentation
-- Review the task status in SailPoint UI using the returned task ID
+- Check SailPoint IdentityNow API documentation
+- Review the provisioning task status in SailPoint UI using the returned task ID
 - Contact SailPoint support with the tracking ID from error messages
+- Create an issue in this repository
