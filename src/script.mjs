@@ -159,9 +159,9 @@ export default {
 
   /**
    * Graceful shutdown handler - cleanup when job is halted
-   * @param {Object} resolvedParams - Original params plus halt reason
-   * @param {string} resolvedParams.reason - Reason for halt
-   * @param {string} resolvedParams.accountId - The account ID being processed
+   * @param {Object} params - Original params plus halt reason
+   * @param {string} params.reason - Reason for halt
+   * @param {string} params.accountId - The account ID being processed
    *
    * @param {Object} context - Execution context
    * @returns {Object} Cleanup results
