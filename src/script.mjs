@@ -5,13 +5,13 @@
  * This action is commonly used to temporarily disable accounts for users who should not have access.
  */
 
-import { getBaseURL, getAuthorizationHeader} from '@sgnl-actions/utils';
+import { getBaseURL, createAuthHeaders} from '@sgnl-actions/utils';
 
 /**
  * Helper function to disable an account in SailPoint IdentityNow
  * @private
  */
-async function disableAccount(accountId, baseUrl, authToken, externalVerificationId, forceProvisioning) {
+async function disableAccount(accountId, baseUrl, headers, externalVerificationId, forceProvisioning) {
   // Safely encode accountId to prevent injection
   const encodedAccountId = encodeURIComponent(accountId);
   const url = `${baseUrl}/v3/accounts/${encodedAccountId}/disable`;
@@ -27,16 +27,9 @@ async function disableAccount(accountId, baseUrl, authToken, externalVerificatio
     requestBody.forceProvisioning = forceProvisioning;
   }
 
-  // Ensure auth token has Bearer prefix
-  const authHeader = authToken.startsWith('Bearer ') ? authToken : `Bearer ${authToken}`;
-
   const response = await fetch(url, {
     method: 'POST',
-    headers: {
-      'Authorization': authHeader,
-      'Accept': 'application/json',
-      'Content-Type': 'application/json'
-    },
+    headers,
     body: JSON.stringify(requestBody)
   });
 
@@ -82,13 +75,13 @@ export default {
     const baseUrl = getBaseURL(params, context);
 
     // Get authorization header
-    const authHeader = await getAuthorizationHeader(context);
+    const headers = await createAuthHeaders(context);
 
     // Make the API request to disable account
     const response = await disableAccount(
       accountId,
       baseUrl,
-      authHeader,
+      headers,
       externalVerificationId,
       forceProvisioning
     );
