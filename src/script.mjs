@@ -5,7 +5,7 @@
  * This action is commonly used to temporarily disable accounts for users who should not have access.
  */
 
-import { getBaseURL, getAuthorizationHeader} from '@sgnl-actions/utils';
+import { getBaseURL, getAuthorizationHeader } from '@sgnl-actions/utils';
 
 /**
  * Helper function to disable an account in SailPoint IdentityNow
