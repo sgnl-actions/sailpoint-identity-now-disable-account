@@ -1,6 +1,6 @@
 import { jest } from '@jest/globals';
 import script from '../src/script.mjs';
-import { SGNL_USER_AGENT } from '@sgnl-actions/utils'; 
+import { SGNL_USER_AGENT } from '@sgnl-actions/utils';
 
 // Mock the global fetch function
 global.fetch = jest.fn();
