@@ -5,7 +5,7 @@
  * This action is commonly used to temporarily disable accounts for users who should not have access.
  */
 
-import { getBaseURL, createAuthHeaders } from '@sgnl-actions/utils';
+import { getBaseURL, createHeaders } from '@sgnl-actions/utils';
 
 /**
  * Helper function to disable an account in SailPoint IdentityNow
@@ -75,7 +75,7 @@ export default {
     const baseUrl = getBaseURL(params, context);
 
     // Get authorization header
-    const headers = await createAuthHeaders(context);
+    const headers = await createHeaders(context);
 
     // Make the API request to disable account
     const response = await disableAccount(
